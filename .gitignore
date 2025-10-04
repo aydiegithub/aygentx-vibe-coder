@@ -1,4 +1,4 @@
-# Nestjs specific
+# NestJS Specific
 /dist
 /node_modules
 /build
@@ -18,7 +18,49 @@ lerna-debug.log*
 .env.development
 .env.test
 .env.production
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# temp directory
+# Temp / Cache Directories
 .temp
 .tmp
+.cache
+.next/cache
+
+
+# Next.js / React Build Output
+.next/
+out/
+build/
+dist/
+
+# Coverage Reports
+coverage/
+*.lcov
+
+# TypeScript
+*.tsbuildinfo
+
+# OS / System Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# IDE / Editor Files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.bak
+
+# Deployment / CI/CD Artifacts
+.vercel/
+firebase-debug.log
+*.tgz
+*.zip
