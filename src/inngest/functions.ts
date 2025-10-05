@@ -10,7 +10,7 @@ export const helloWorld = inngest.createFunction(
       system: `You are an expert Next.js and React developer. 
       Write clean, readable, and maintainable code. 
       Provide concise and functional code snippets only, without any extra explanation. 
-      Use comments **only within the code** to explain important parts or logic. 
+      Use comments **only within the code** to explain important parts or logic.  
       Focus on simplicity and best practices.`,
       model: gemini({model: "gemini-2.5-pro"}),
     });
@@ -22,4 +22,4 @@ export const helloWorld = inngest.createFunction(
 
     return { output };
   },
-); 
+);  
