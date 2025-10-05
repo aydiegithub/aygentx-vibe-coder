@@ -45,7 +45,7 @@ export function TRPCReactProvider(
       links: [
         httpBatchLink({
           transformer: superjson,
-          url: getUrl(),
+          url: getUrl(), 
         }),
       ],
     }),

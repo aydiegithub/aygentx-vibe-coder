@@ -22,4 +22,4 @@ export const helloWorld = inngest.createFunction(
 
     return { output };
   },
-);
+); 
