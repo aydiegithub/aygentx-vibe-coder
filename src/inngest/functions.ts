@@ -1,14 +1,22 @@
 import { inngest } from "./client";
-import { gemini, createAgent, createTool, createNetwork } from "@inngest/agent-kit";
+import { gemini, createAgent, createTool, createNetwork, type Tool } from "@inngest/agent-kit";
 import { Sandbox } from "@e2b/code-interpreter";
 import { getSandbox, lastAssistantTextMessageContent } from "./utils";
 import { z } from "zod";
 import { PROMPT } from "@/prompts";
 import { title } from "process";
+import { prisma } from "@/lib/db";
+import path from "path";
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world" },
-  { event: "test/hello.world" },
+interface AgentState {
+  summary: string;
+  files: { [path: string]: string };
+};
+
+
+export const codeAgentFunction = inngest.createFunction(
+  { id: "code-agent" },
+  { event: "code-agent/run" },
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       if (!process.env.E2B_TEMPLATE_NAME) {
@@ -18,12 +26,12 @@ export const helloWorld = inngest.createFunction(
       return sandbox.sandboxId;
     });
 
-    const codeAgent = createAgent({
+    const codeAgent = createAgent<AgentState>({
       name: "codeAgent",
       description: "An expert coding agent.",
       system: PROMPT,
       model: gemini({
-        model: "gemini-2.5-pro",
+        model: "gemini-2.5-flash",
       }),
       
       tools: [
@@ -67,9 +75,13 @@ export const helloWorld = inngest.createFunction(
               })
             ),
           }) as any,
-          handler: async (input: any, opts: any) => {
-            const { files } = input;
-            const { step, network } = opts;
+          // handler: async (input: any, opts: any) => {
+          //   const { files } = input;
+          //   const { step, network } = opts;
+          handler: async (
+            {files},
+            {step, network}: Tool.Options<AgentState>
+          ) => {
             const newFiles = await step?.run("createOrUpdateFiles", async () => {
               try {
                 const updatedFiles = network.state.data.files || {};
@@ -131,7 +143,7 @@ export const helloWorld = inngest.createFunction(
       }
     });
 
-    const network = createNetwork({
+    const network = createNetwork<AgentState>({
       name: "coding-agent-network",
       agents: [codeAgent],
       maxIter: 15,
@@ -147,6 +159,10 @@ export const helloWorld = inngest.createFunction(
 
     const result = await network.run(event.data.value);
 
+    const isError = 
+      !result.state.data.summary || 
+      Object.keys(result.state.data.files || {}).length === 0;
+
     // const { output } = await codeAgent.run(
     //   `Write the following snippet: ${event.data.value}`,
     // );
@@ -156,6 +172,32 @@ export const helloWorld = inngest.createFunction(
       const sandbox = await getSandbox(sandboxId);
       const host = sandbox.getHost(3000);
       return `https://${host}`;
+    });
+
+    await step.run("save-result", async () => {
+      if (isError) {
+        return await prisma.message.create({
+          data: {
+            content: "Something went wrong. Please try again.",
+            role: "ASSISTANT",
+            type: "ERROR",
+          },
+        })
+      }
+      return await prisma.message.create({
+        data: {
+          content: result.state.data.summary,
+          role: "ASSISTANT",
+          type: "RESULT",
+          fragment: {
+            create: {
+              sandboxUrl: sandboxUrl,
+              title: "Fragment",
+              files: result.state.data.files,
+            },
+          }
+        },
+      })
     });
 
     return { 
