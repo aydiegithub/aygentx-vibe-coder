@@ -20,8 +20,8 @@ export const codeAgentFunction = inngest.createFunction(
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       if (!process.env.E2B_TEMPLATE_NAME) {
-      throw new Error("E2B_TEMPLATE_NAME is not set in environment variables");
-    }
+        throw new Error("E2B_TEMPLATE_NAME is not set in environment variables");
+      }
       const sandbox = await Sandbox.create(process.env.E2B_TEMPLATE_NAME);
       return sandbox.sandboxId;
     });
@@ -33,7 +33,7 @@ export const codeAgentFunction = inngest.createFunction(
       model: gemini({
         model: "gemini-2.5-flash",
       }),
-      
+
       tools: [
         createTool({
           name: "terminal",
@@ -41,9 +41,9 @@ export const codeAgentFunction = inngest.createFunction(
           parameters: z.object({
             command: z.string(),
           }) as any,
-          handler: async  ({ command }, {step}) => {
+          handler: async ({ command }, { step }) => {
             return await step?.run("terminal", async () => {
-              const buffers = {stdout: "", stderr: ""};
+              const buffers = { stdout: "", stderr: "" };
               try {
                 const sandbox = await getSandbox(sandboxId);
                 const result = await sandbox.commands.run(command, {
@@ -55,7 +55,7 @@ export const codeAgentFunction = inngest.createFunction(
                   }
                 });
                 return result.stdout;
-              } 
+              }
               catch (e) {
                 return `Command failed: ${e} 
                        \nstdout: ${buffers.stdout} 
@@ -79,8 +79,8 @@ export const codeAgentFunction = inngest.createFunction(
           //   const { files } = input;
           //   const { step, network } = opts;
           handler: async (
-            {files},
-            {step, network}: Tool.Options<AgentState>
+            { files },
+            { step, network }: Tool.Options<AgentState>
           ) => {
             const newFiles = await step?.run("createOrUpdateFiles", async () => {
               try {
@@ -111,12 +111,12 @@ export const codeAgentFunction = inngest.createFunction(
             const { files } = input;
             const { step } = opts;
             return await step?.run("readFiles", async () => {
-              try{
+              try {
                 const sandbox = await getSandbox(sandboxId);
                 const contents = [];
                 for (const file of files) {
                   const content = await sandbox.files.read(file);
-                  contents.push({ path: file, content})
+                  contents.push({ path: file, content })
                 }
                 return JSON.stringify(contents);
               }
@@ -129,11 +129,11 @@ export const codeAgentFunction = inngest.createFunction(
       ],
       lifecycle: {
         onResponse: async ({ result, network }) => {
-          const lastAssistantTextMessage = 
+          const lastAssistantTextMessage =
             lastAssistantTextMessageContent(result);
 
           if (lastAssistantTextMessage && network) {
-            if (lastAssistantTextMessage.includes("<task_summary>")){
+            if (lastAssistantTextMessage.includes("<task_summary>")) {
               network.state.data.summary = lastAssistantTextMessage;
             }
           }
@@ -159,8 +159,8 @@ export const codeAgentFunction = inngest.createFunction(
 
     const result = await network.run(event.data.value);
 
-    const isError = 
-      !result.state.data.summary || 
+    const isError =
+      !result.state.data.summary ||
       Object.keys(result.state.data.files || {}).length === 0;
 
     // const { output } = await codeAgent.run(
@@ -178,6 +178,7 @@ export const codeAgentFunction = inngest.createFunction(
       if (isError) {
         return await prisma.message.create({
           data: {
+            projectId: event.data.projectId,
             content: "Something went wrong. Please try again.",
             role: "ASSISTANT",
             type: "ERROR",
@@ -186,6 +187,7 @@ export const codeAgentFunction = inngest.createFunction(
       }
       return await prisma.message.create({
         data: {
+          projectId: event.data.projectId,
           content: result.state.data.summary,
           role: "ASSISTANT",
           type: "RESULT",
@@ -200,7 +202,7 @@ export const codeAgentFunction = inngest.createFunction(
       })
     });
 
-    return { 
+    return {
       url: sandboxUrl,
       title: "Fragment",
       files: result.state.data.files,
