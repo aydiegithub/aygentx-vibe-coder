@@ -25,6 +25,14 @@ export const projectsRouter = createTRPCRouter({
             return existingProjects;
         }),
 
+    getMany: baseProcedure
+        .query(async () => {
+            const projects = await prisma.project.findMany({
+                orderBy: { createdAt: "desc" },
+            });
+            return projects;
+        }),
+
     create: baseProcedure
         .input(
             z.object({
