@@ -23,7 +23,7 @@ export const MessageContainer = ({ projectId, activeFragment, setActiveFragment 
         projectId: projectId,
     }, {
         // TODO: Temporary live message update
-        refetchInterval: 5000,
+        refetchInterval: 10,
     }));
 
     // TODO: Causing Problem
