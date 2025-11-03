@@ -7,6 +7,7 @@ import { FRAGMENT_TITLE_PROMPT, PROMPT, RESPONSE_PROMPT } from "@/prompts";
 import { title } from "process";
 import { prisma } from "@/lib/db";
 import path from "path";
+import { SANDBOX_TIME_OUT } from "./types";
 
 interface AgentState {
   summary: string;
@@ -23,6 +24,7 @@ export const codeAgentFunction = inngest.createFunction(
         throw new Error("E2B_TEMPLATE_NAME is not set in environment variables");
       }
       const sandbox = await Sandbox.create(process.env.E2B_TEMPLATE_NAME);
+      await sandbox.setTimeout(SANDBOX_TIME_OUT);
       return sandbox.sandboxId;
     });
 
@@ -35,6 +37,7 @@ export const codeAgentFunction = inngest.createFunction(
         orderBy: {
           createdAt: "desc",
         },
+        take: 5
       });
 
       for (const message of messages) {
@@ -45,7 +48,7 @@ export const codeAgentFunction = inngest.createFunction(
         })
       }
 
-      return formattedMessages;
+      return formattedMessages.reverse();
     });
 
     const state = createState<AgentState>(
