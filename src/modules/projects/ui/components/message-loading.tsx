@@ -12,13 +12,18 @@ const ShimmerMessages = () => {
         "Optimizing layout...",
         "Adding final touches...",
         "Almost ready...",
+        "Injecting some magic...",
+        "Reviewing pixel perfection...",
+        "Testing responsiveness...",
+        "Deploying virtual servers...",
+        "Preparing your masterpiece..."
     ];
 
     const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentMessageIndex((prev) => (prev + 1) % messages.length);
-        }, 6000);
+        }, 8000);
         return () => clearInterval(interval);
     }, [messages.length]);
 
